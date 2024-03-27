@@ -1,0 +1,195 @@
+body {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin: 0;
+}
+
+li {
+  list-style: none;
+}
+
+img {
+  border: 0;
+  vertical-align: middle;
+}
+
+
+/* 大盒子 */
+.bigbox {
+  height: 720px;
+  width: 544px;
+  border: 1px solid rgb(182, 180, 180);
+  margin: 0 auto;
+}
+
+/* 头 */
+.header {
+  width: 544px;
+  height: 22px;
+  background-color: #292929;
+  position: relative;
+}
+
+.header .h_orange {
+  width: 102px;
+  height: 22px;
+  background-color: #ff9916;
+  position: absolute;
+  right: 38px;
+}
+
+.header .h_orange p {
+  color: white;
+  line-height: 22px;
+  margin-left: 26px;
+}
+
+/* 内容区域*/
+.main {
+  width: 496px;
+  height: 692px;
+  margin: 0 auto;
+  margin-top: 30px;
+}
+
+/* 内容左侧 */
+.main .left {
+  float: left;
+  width: 200px;
+  height: 100%;
+  /* border-right: 1px solid gray; */
+}
+
+.left img {
+  width: 78px;
+  height: 96px;
+  border: 2px solid #e5e5e5;
+  margin-left: 25%;
+}
+
+.left span {
+  margin-top: 14px;
+  display: block;
+  font-size: 18px;
+  color: #36292f;
+  width: 60px;
+  margin: 0 auto;
+}
+
+.left ul {
+  margin-top: 26px;
+  width: 100%;
+  height: 14px;
+}
+
+.left li {
+  float: left;
+  margin-right: 10px;
+  line-height: 14px;
+  font-size: 10px;
+  color: #b4b4b4;
+}
+
+.spacer {
+  background-color: #b4b4b4;
+  width: 1px;
+  height: 12px;
+  margin-top: 2px;
+  line-height: 14px;
+
+}
+
+/* 内容右侧 */
+.main .right {
+  float: right;
+  width: 290px;
+  height: 100%;
+}
+
+.right .title {
+  width: 100%;
+  height: 30px;
+  background-color: #f6f6f6;
+  position: relative;
+}
+
+.title span {
+  height: 30px;
+  width: 4px;
+  display: inline-block;
+  background-color: #ff9916;
+}
+
+.title>p {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  width: 260px;
+  color: #2f363c;
+  font-weight: bold;
+}
+
+.right ul {
+  width: 100%;
+  height: 48px;
+}
+
+.right ul li {
+  margin-left: 2px;
+  line-height: 48px;
+  float: left;
+  width: 94px;
+  font-size: 10px;
+}
+
+.statudy li {
+  color: #392b35;
+  font-weight: bold;
+
+}
+
+.right .content {
+  width: 100%;
+  height: 70px;
+}
+
+.right .skill {
+  height: 160px;
+  margin-top: 12px;
+  margin-bottom: 18px;
+}
+
+.skill p {
+  font-size: 10px;
+  margin-bottom: 5px;
+}
+
+.content p {
+  margin-top: 4px;
+  font-size: 10px;
+}
+
+.right ul:last-child li {
+  clear: both;
+  float: none;
+  list-style: disc;
+  margin-left: 15px;
+  width: 290px;
+  height: 20px;
+
+} 
