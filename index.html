@@ -1,13 +1,562 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-</head>
-<body>
-  <script>
-    window.location.href = './template/index.html'
-  </script>
-</body>
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>问答弹窗</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --safe-top: env(safe-area-inset-top, 0px);
+        --safe-right: env(safe-area-inset-right, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+        --safe-left: env(safe-area-inset-left, 0px);
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", Arial, "Noto Sans CJK SC", sans-serif;
+        background: radial-gradient(1200px 800px at 20% 10%, #f5f7ff 0%, #f1f5f9 45%, #eef2ff 100%);
+        overflow: hidden;
+        height: 100dvh;
+        min-height: 100vh;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.35);
+        opacity: 1;
+        transition: opacity 420ms cubic-bezier(0.22, 0.82, 0.2, 1);
+        padding: max(12px, var(--safe-top)) max(12px, var(--safe-right)) max(12px, var(--safe-bottom))
+          max(12px, var(--safe-left));
+        box-sizing: border-box;
+      }
+
+      .modal {
+        position: fixed;
+        z-index: 10;
+        width: min(360px, calc(100vw - 32px));
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 18px 60px rgba(2, 6, 23, 0.35);
+        border: 1px solid rgba(148, 163, 184, 0.55);
+        backdrop-filter: blur(10px);
+        padding: 16px 16px 14px;
+        user-select: none;
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+        transition: opacity 420ms cubic-bezier(0.22, 0.82, 0.2, 1), transform 420ms cubic-bezier(0.22, 0.82, 0.2, 1);
+        will-change: opacity, transform;
+        max-height: calc(100dvh - 24px - var(--safe-top) - var(--safe-bottom));
+        overflow: auto;
+        overscroll-behavior: contain;
+      }
+
+      .backdrop.leaving {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .backdrop.leaving .modal {
+        opacity: 0;
+        transform: translate3d(-90px, 0, 0) scale(0.985);
+      }
+
+      .modal.inactive {
+        pointer-events: none;
+        opacity: 0.78;
+        filter: saturate(0.86);
+      }
+
+      .title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        color: #0f172a;
+        margin-bottom: 8px;
+      }
+
+      .badge {
+        font-size: 12px;
+        font-weight: 700;
+        color: #334155;
+        background: #e2e8f0;
+        border: 1px solid rgba(148, 163, 184, 0.7);
+        padding: 4px 8px;
+        border-radius: 999px;
+      }
+
+      .question {
+        font-size: 18px;
+        line-height: 1.4;
+        font-weight: 750;
+        color: #0b1220;
+        margin: 10px 0 14px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        cursor: pointer;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-size: 14px;
+        font-weight: 750;
+        transition: transform 120ms ease, filter 120ms ease;
+        touch-action: manipulation;
+      }
+
+      button:active {
+        transform: scale(0.98);
+      }
+
+      .btn-yes {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        color: #ffffff;
+      }
+
+      .btn-no {
+        background: linear-gradient(135deg, #fb7185 0%, #e11d48 100%);
+        color: #ffffff;
+      }
+
+      .hint {
+        margin-top: 10px;
+        font-size: 12px;
+        line-height: 1.35;
+        color: #475569;
+        min-height: 16px;
+      }
+
+      .shake {
+        animation: shake 260ms ease-in-out;
+      }
+
+      @keyframes shake {
+        0% {
+          transform: translate3d(0, 0, 0) rotate(0deg);
+        }
+        25% {
+          transform: translate3d(-2px, 1px, 0) rotate(-0.4deg);
+        }
+        50% {
+          transform: translate3d(3px, -1px, 0) rotate(0.5deg);
+        }
+        75% {
+          transform: translate3d(-1px, 2px, 0) rotate(-0.3deg);
+        }
+        100% {
+          transform: translate3d(0, 0, 0) rotate(0deg);
+        }
+      }
+
+      .finish {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(900px 700px at 30% 20%, rgba(251, 113, 133, 0.55) 0%, rgba(244, 114, 182, 0.22) 45%, rgba(2, 6, 23, 0.55) 100%);
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transform: translate3d(120px, 0, 0) scale(0.992);
+        filter: blur(10px);
+        transition: opacity 560ms cubic-bezier(0.22, 0.82, 0.2, 1), transform 560ms cubic-bezier(0.22, 0.82, 0.2, 1), filter 560ms cubic-bezier(0.22, 0.82, 0.2, 1);
+        will-change: opacity, transform, filter;
+      }
+
+      .finish.show {
+        visibility: visible;
+      }
+
+      .finish.show.animate-in {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+        filter: blur(0px);
+        pointer-events: auto;
+      }
+
+      .finish-inner {
+        width: min(760px, calc(100vw - 24px));
+        padding: 18px 16px 22px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid rgba(148, 163, 184, 0.55);
+        box-shadow: 0 22px 80px rgba(2, 6, 23, 0.45);
+        backdrop-filter: blur(12px);
+        display: grid;
+        gap: 12px;
+        justify-items: center;
+        text-align: center;
+        transform: translate3d(0, 18px, 0) scale(0.992);
+        transition: transform 560ms cubic-bezier(0.22, 0.82, 0.2, 1);
+        will-change: transform;
+      }
+
+      .finish.show.animate-in .finish-inner {
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+
+      .finish-title {
+        font-size: 22px;
+        line-height: 1.2;
+        font-weight: 900;
+        color: #0f172a;
+        letter-spacing: 0.04em;
+      }
+
+      .finish-sub {
+        font-size: 13px;
+        color: #475569;
+      }
+
+      .finish-art {
+        width: min(520px, 86vw);
+        height: auto;
+        display: block;
+      }
+
+      @media (max-width: 420px) {
+        .modal {
+          width: min(320px, calc(100vw - 40px));
+          padding: 14px 14px 12px;
+          border-radius: 16px;
+        }
+
+        .question {
+          font-size: 17px;
+        }
+
+        .actions {
+          justify-content: stretch;
+        }
+
+        .actions button {
+          flex: 1;
+          padding: 12px 14px;
+        }
+
+        .finish-title {
+          font-size: 20px;
+        }
+
+        .finish-art {
+          width: min(520px, 92vw);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="backdrop" id="backdrop">
+      <div class="modal" id="modalTemplate" role="dialog" aria-modal="true" aria-label="问答弹窗">
+        <div class="title">
+          <span>严肃问答</span>
+          <span class="badge" data-progress></span>
+        </div>
+        <div class="question" data-question></div>
+        <div class="actions">
+          <button class="btn-yes" data-yes type="button"></button>
+          <button class="btn-no" data-no type="button"></button>
+        </div>
+        <div class="hint" data-hint></div>
+      </div>
+    </div>
+
+    <div class="finish" id="finish" aria-hidden="true">
+      <div class="finish-inner">
+        <div class="finish-title">恭喜笨蛋小猪张宇峰通关</div>
+        <svg class="finish-art" viewBox="0 0 400 360" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.28" />
+              <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.18" />
+            </filter>
+            <filter id="grain" x="-20%" y="-20%" width="140%" height="140%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch" />
+              <feColorMatrix type="matrix" values="
+                1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                0 0 0 0.22 0" />
+            </filter>
+            <radialGradient id="heartFill" cx="28%" cy="22%" r="78%">
+              <stop offset="0" stop-color="#ffe4e6" />
+              <stop offset="0.28" stop-color="#fda4af" />
+              <stop offset="0.6" stop-color="#fb7185" />
+              <stop offset="1" stop-color="#f472b6" />
+            </radialGradient>
+            <linearGradient id="heartStroke" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fecdd3" stop-opacity="0.85" />
+              <stop offset="0.55" stop-color="#fb7185" stop-opacity="0.7" />
+              <stop offset="1" stop-color="#db2777" stop-opacity="0.65" />
+            </linearGradient>
+            <radialGradient id="heartHighlight" cx="26%" cy="18%" r="52%">
+              <stop offset="0" stop-color="#ffffff" stop-opacity="0.55" />
+              <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+            </radialGradient>
+          </defs>
+
+          <path
+            d="M200 324C124 264 60 210 60 136C60 82 104 44 158 44C182 44 205 54 220 74C235 54 258 44 282 44C336 44 380 82 380 136C380 210 316 264 200 324Z"
+            fill="url(#heartFill)"
+            filter="url(#softShadow)"
+          />
+          <path
+            d="M200 324C124 264 60 210 60 136C60 82 104 44 158 44C182 44 205 54 220 74C235 54 258 44 282 44C336 44 380 82 380 136C380 210 316 264 200 324Z"
+            fill="url(#heartHighlight)"
+            opacity="0.9"
+          />
+          <path
+            d="M200 324C124 264 60 210 60 136C60 82 104 44 158 44C182 44 205 54 220 74C235 54 258 44 282 44C336 44 380 82 380 136C380 210 316 264 200 324Z"
+            fill="none"
+            stroke="url(#heartStroke)"
+            stroke-width="7"
+            opacity="0.75"
+          />
+          <path
+            d="M200 324C124 264 60 210 60 136C60 82 104 44 158 44C182 44 205 54 220 74C235 54 258 44 282 44C336 44 380 82 380 136C380 210 316 264 200 324Z"
+            filter="url(#grain)"
+          />
+
+          <g transform="translate(0 -6)">
+            <g>
+              <path d="M136 146C126 128 124 112 134 102C148 88 170 98 186 118Z" fill="#fecdd3" opacity="0.95" />
+              <path d="M264 146C274 128 276 112 266 102C252 88 230 98 214 118Z" fill="#fecdd3" opacity="0.95" />
+            </g>
+
+            <circle cx="200" cy="186" r="72" fill="#ffe4e6" opacity="0.98" />
+            <circle cx="200" cy="186" r="72" fill="none" stroke="#fb7185" stroke-width="6" opacity="0.55" />
+
+            <circle cx="174" cy="176" r="8" fill="#0f172a" opacity="0.85" />
+            <circle cx="226" cy="176" r="8" fill="#0f172a" opacity="0.85" />
+
+            <ellipse cx="200" cy="210" rx="40" ry="30" fill="#fecdd3" opacity="0.96" />
+            <ellipse cx="200" cy="210" rx="40" ry="30" fill="none" stroke="#fb7185" stroke-width="5" opacity="0.45" />
+            <ellipse cx="188" cy="210" rx="7" ry="10" fill="#fb7185" opacity="0.7" />
+            <ellipse cx="212" cy="210" rx="7" ry="10" fill="#fb7185" opacity="0.7" />
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <script>
+      const questions = [
+        {
+          text: "张宇峰是笨蛋吗？",
+          yes: "是",
+          no: "否"
+        },
+        {
+          text: "张宇峰是小猪吗？",
+          yes: "是",
+          no: "否"
+        },
+        {
+          text: "张宇峰喜欢丹宁宝宝吗？",
+          yes: "是",
+          no: "否"
+        }
+      ];
+
+      const elBackdrop = document.getElementById("backdrop");
+      const elModalTemplate = document.getElementById("modalTemplate");
+      const elFinish = document.getElementById("finish");
+
+      let index = 0;
+      let noCount = 0;
+      let isFinished = false;
+      let zIndexBase = 10;
+      let modalStack = [elModalTemplate];
+
+      function clamp(n, min, max) {
+        return Math.min(Math.max(n, min), max);
+      }
+
+      function getModalParts(modalEl) {
+        const questionEl = modalEl.querySelector("[data-question]");
+        const hintEl = modalEl.querySelector("[data-hint]");
+        const btnYesEl = modalEl.querySelector("[data-yes]");
+        const btnNoEl = modalEl.querySelector("[data-no]");
+        const progressEl = modalEl.querySelector("[data-progress]");
+
+        return { questionEl, hintEl, btnYesEl, btnNoEl, progressEl };
+      }
+
+      function setModalActive(modalEl, active) {
+        modalEl.classList.toggle("inactive", !active);
+      }
+
+      function readPxVar(name) {
+        const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        const n = Number.parseFloat(v);
+        return Number.isFinite(n) ? n : 0;
+      }
+
+      function getViewportSize() {
+        if (window.visualViewport) {
+          return {
+            width: window.visualViewport.width,
+            height: window.visualViewport.height
+          };
+        }
+        return { width: window.innerWidth, height: window.innerHeight };
+      }
+
+      function placeModalRandom(modalEl) {
+        if (isFinished) return;
+        modalEl.style.visibility = "hidden";
+        modalEl.style.left = "12px";
+        modalEl.style.top = "12px";
+
+        requestAnimationFrame(() => {
+          const rect = modalEl.getBoundingClientRect();
+          const pad = 12;
+          const safeLeft = readPxVar("--safe-left");
+          const safeRight = readPxVar("--safe-right");
+          const safeTop = readPxVar("--safe-top");
+          const safeBottom = readPxVar("--safe-bottom");
+          const { width: vw, height: vh } = getViewportSize();
+
+          const minLeft = pad + safeLeft;
+          const minTop = pad + safeTop;
+          const maxLeft = Math.max(minLeft, vw - rect.width - pad - safeRight);
+          const maxTop = Math.max(minTop, vh - rect.height - pad - safeBottom);
+          const left = clamp(minLeft + Math.random() * (maxLeft - minLeft), minLeft, maxLeft);
+          const top = clamp(minTop + Math.random() * (maxTop - minTop), minTop, maxTop);
+
+          modalEl.style.left = `${Math.round(left)}px`;
+          modalEl.style.top = `${Math.round(top)}px`;
+          modalEl.style.visibility = "visible";
+        });
+      }
+
+      function renderQuestion(modalEl, hintText) {
+        const q = questions[index];
+        const { questionEl, hintEl, btnYesEl, btnNoEl, progressEl } = getModalParts(modalEl);
+        questionEl.textContent = q.text;
+        btnYesEl.textContent = q.yes;
+        btnNoEl.textContent = q.no;
+        progressEl.textContent = `第 ${index + 1} / ${questions.length} 题`;
+        hintEl.textContent = hintText ?? "";
+        placeModalRandom(modalEl);
+      }
+
+      function renderFinish() {
+        isFinished = true;
+        elFinish.classList.add("show");
+        elFinish.setAttribute("aria-hidden", "false");
+        requestAnimationFrame(() => {
+          elFinish.classList.add("animate-in");
+        });
+        elBackdrop.classList.add("leaving");
+        setTimeout(() => {
+          elBackdrop.style.display = "none";
+        }, 440);
+      }
+
+      function clearOtherModals(keepModal) {
+        modalStack = modalStack.filter((m) => m && m.isConnected);
+        for (const m of modalStack) {
+          if (m !== keepModal) m.remove();
+        }
+        modalStack = [keepModal];
+        setModalActive(keepModal, true);
+        zIndexBase = 10;
+        keepModal.style.zIndex = `${zIndexBase}`;
+      }
+
+      function attachModalHandlers(modalEl) {
+        const { btnYesEl, btnNoEl } = getModalParts(modalEl);
+
+        btnYesEl.addEventListener("click", () => {
+          modalEl.classList.remove("shake");
+          clearOtherModals(modalEl);
+          noCount = 0;
+          if (index < questions.length - 1) {
+            index += 1;
+            renderQuestion(modalEl);
+            return;
+          }
+
+          renderFinish();
+        });
+
+        btnNoEl.addEventListener("click", () => {
+          noCount += 1;
+          const hintText = `你刚刚点了“否” ${noCount} 次，再想想？`;
+          const { hintEl } = getModalParts(modalEl);
+          hintEl.textContent = hintText;
+
+          modalEl.classList.remove("shake");
+          void modalEl.offsetWidth;
+          modalEl.classList.add("shake");
+
+          setModalActive(modalEl, false);
+
+          const nextModal = elModalTemplate.cloneNode(true);
+          nextModal.removeAttribute("id");
+          zIndexBase += 1;
+          nextModal.style.zIndex = `${zIndexBase}`;
+          elBackdrop.appendChild(nextModal);
+          modalStack.push(nextModal);
+          attachModalHandlers(nextModal);
+          setModalActive(nextModal, true);
+
+          renderQuestion(nextModal, hintText);
+          nextModal.classList.remove("shake");
+          void nextModal.offsetWidth;
+          nextModal.classList.add("shake");
+        });
+      }
+
+      attachModalHandlers(elModalTemplate);
+      renderQuestion(elModalTemplate);
+
+      window.addEventListener("resize", () => {
+        const topModal = modalStack[modalStack.length - 1];
+        if (topModal) placeModalRandom(topModal);
+      });
+
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", () => {
+          const topModal = modalStack[modalStack.length - 1];
+          if (topModal) placeModalRandom(topModal);
+        });
+        window.visualViewport.addEventListener("scroll", () => {
+          const topModal = modalStack[modalStack.length - 1];
+          if (topModal) placeModalRandom(topModal);
+        });
+      }
+
+      window.addEventListener(
+        "keydown",
+        (e) => {
+          if (e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        },
+        true
+      );
+
+    </script>
+  </body>
 </html>
