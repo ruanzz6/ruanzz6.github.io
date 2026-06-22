@@ -40,13 +40,13 @@
       .modal {
         position: fixed;
         z-index: 10;
-        width: min(320px, calc(100vw - 48px));
-        border-radius: 16px;
+        width: min(300px, calc(100vw - 56px));
+        border-radius: 14px;
         background: rgba(255, 255, 255, 0.92);
         border: 1px solid rgba(148, 163, 184, 0.55);
         box-shadow: 0 18px 60px rgba(2, 6, 23, 0.35);
         backdrop-filter: blur(10px);
-        padding: 14px 14px 12px;
+        padding: 12px 12px 10px;
         user-select: none;
         max-height: calc(100dvh - 24px - var(--safe-top) - var(--safe-bottom));
         overflow: auto;
@@ -55,16 +55,18 @@
 
       @media (max-width: 420px) {
         .modal {
-          width: min(300px, calc(100vw - 56px));
-          padding: 12px 12px 10px;
+          width: min(260px, calc(100vw - 72px));
+          padding: 10px 10px 8px;
         }
 
         .content {
           font-size: 13px;
+          margin-top: 8px;
         }
 
         button {
-          padding: 12px 12px;
+          padding: 10px 10px;
+          font-size: 13px;
         }
       }
 
@@ -79,34 +81,34 @@
       }
 
       .badge {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 800;
         color: #9f1239;
         background: #ffe4e6;
         border: 1px solid rgba(251, 113, 133, 0.55);
-        padding: 4px 8px;
+        padding: 3px 7px;
         border-radius: 999px;
       }
 
       .content {
-        margin-top: 10px;
+        margin-top: 8px;
         font-size: 14px;
         line-height: 1.5;
         color: #0b1220;
       }
 
       .actions {
-        margin-top: 12px;
+        margin-top: 10px;
         display: flex;
-        gap: 10px;
+        gap: 8px;
       }
 
       button {
         appearance: none;
         border: 0;
         cursor: pointer;
-        border-radius: 12px;
-        padding: 12px 14px;
+        border-radius: 11px;
+        padding: 10px 12px;
         font-size: 14px;
         font-weight: 850;
         transition: transform 120ms ease, filter 120ms ease;
@@ -186,7 +188,7 @@
       let popHandler = null;
       let autoTimer = null;
       let choiceTimer = null;
-      let autoIntervalMs = 200;
+      let autoIntervalMs = 100;
       let maxModals = 50;
       let modalList = [];
 
