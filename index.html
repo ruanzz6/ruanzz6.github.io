@@ -186,12 +186,23 @@
       let popHandler = null;
       let autoTimer = null;
       let choiceTimer = null;
-      const autoIntervalMs = 650;
-      const maxModals = 26;
+      let autoIntervalMs = 200;
+      let maxModals = 50;
       let modalList = [];
 
       function clamp(n, min, max) {
         return Math.min(Math.max(n, min), max);
+      }
+
+      {
+        const params = new URLSearchParams(location.search);
+        const msRaw = params.get("ms") ?? params.get("interval");
+        const maxRaw = params.get("max");
+        const ms = Number.parseInt(msRaw ?? "", 10);
+        const max = Number.parseInt(maxRaw ?? "", 10);
+
+        if (Number.isFinite(ms)) autoIntervalMs = Math.round(clamp(ms, 200, 3000));
+        if (Number.isFinite(max)) maxModals = Math.round(clamp(max, 6, 60));
       }
 
       function readPxVar(name) {
